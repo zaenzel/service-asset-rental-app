@@ -13,7 +13,7 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $transactions = Transaction::query();
+        $transactions = Transaction::query()->with('product');
 
         $status = $request->query('status');
         $user_id = $request->query('user_id');
@@ -26,12 +26,16 @@ class TransactionController extends Controller
             return $query->where('user_id', $user_id);
         });
 
-        return new TransactionResource(true, 'List Data Product', $transactions->paginate(10));
+        return new TransactionResource(
+            true,
+            'List Data Transactions',
+            $transactions->paginate(10)
+        );
     }
 
-    public function show($slug)
+    public function show($id)
     {
-        $transaction = Transaction::where('slug', $slug)->first();
+        $transaction = Transaction::where('id', $id)->first();
 
         if (!$transaction) {
             return response()->json([
@@ -40,7 +44,7 @@ class TransactionController extends Controller
             ], 404);
         }
 
-        return new TransactionResource(true, 'Detail Transaction', $transaction);
+        return new TransactionResource(true, 'Detail Transaction', $transaction,);
     }
 
     public function store(Request $request)
@@ -76,19 +80,30 @@ class TransactionController extends Controller
             ], 400);
         }
 
-        $existingBooking = Transaction::where('product_id', $request->product_id)
-            ->where('status', '==', 'approve')
+        $dateBooked = Transaction::where('product_id', $request->product_id)
+            // ->where('status', '==', 'approve')
+            // ->where(function ($query) use ($request) {
+            //     $query->whereBetween('start_booking_date', [$request->start_booking_date, $request->end_booking_date])
+            //         ->orWhereBetween('end_booking_date', [$request->start_booking_date, $request->end_booking_date])
+            //         ->orWhere(function ($subquery) use ($request) {
+            //             $subquery->where('start_booking_date', '<=', $request->start_booking_date)
+            //                 ->where('end_booking_date', '>=', $request->end_booking_date);
+            //         });
+            // })
+            ->where('status', 'approve')
             ->where(function ($query) use ($request) {
-                $query->whereBetween('start_booking_date', [$request->start_booking_date, $request->end_booking_date])
-                    ->orWhereBetween('end_booking_date', [$request->start_booking_date, $request->end_booking_date])
-                    ->orWhere(function ($subquery) use ($request) {
-                        $subquery->where('start_booking_date', '<=', $request->start_booking_date)
-                            ->where('end_booking_date', '>=', $request->end_booking_date);
-                    });
+                $query->where(function ($subQuery) use ($request) {
+                    $subQuery->whereBetween('start_booking_date', [$request->start_booking_date, $request->end_booking_date])
+                        ->orWhereBetween('end_booking_date', [$request->start_booking_date, $request->end_booking_date])
+                        ->orWhere(function ($innerQuery) use ($request) {
+                            $innerQuery->where('start_booking_date', '<=', $request->start_booking_date)
+                                ->where('end_booking_date', '>=', $request->end_booking_date);
+                        });
+                });
             })
             ->first();
 
-        if ($existingBooking) {
+        if ($dateBooked) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Produk ini sudah dibooking pada rentang tanggal yang dipilih.'
@@ -115,7 +130,7 @@ class TransactionController extends Controller
             'price_total' => $totalPrice,
         ]);
 
-        return new TransactionResource(true, 'Trasaksi berhasil dibuat', $transaction);
+        return new TransactionResource(true, 'Trasaksi berhasil dibuat', $transaction,);
     }
 
     public function update(Request $request, $id)
@@ -123,7 +138,7 @@ class TransactionController extends Controller
         $rules = [
             'status' => 'in:pending,process,reject,approve',
             'payment_status' => 'in:not yet paid,dp,lunas',
-            'pa yment_total' => 'integer'
+            'payment_total' => 'integer'
         ];
 
         $data = $request->all();
@@ -176,7 +191,7 @@ class TransactionController extends Controller
 
         try {
             $transaction->save();
-            return new TransactionResource(true, 'Data berhasil di ubah', $transaction);
+            return new TransactionResource(true, 'Data berhasil di ubah', $transaction,);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',

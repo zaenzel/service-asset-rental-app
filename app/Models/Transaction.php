@@ -17,12 +17,11 @@ class Transaction extends Model
 
     const PAYMENT_STATUS_NOT_YET_PAID = "not yet paid";
     const PAYMENT_STATUS_DP = 'dp';
-    const PAYMENT_STATUS_LUNAS = 'lunas';
+    const PAYMENT_STATUS_KEEL = 'keel';
 
     protected $fillable = [
         'user_id',
         'product_id',
-        'slug',
         'start_booking_date',
         'end_booking_date',
         'booking_duration',
@@ -41,11 +40,6 @@ class Transaction extends Model
     public function setPriceTotalAttribute($value)
     {
         $this->attributes['price_total'] = $value;
-    }
-
-    public function setProductSlug($value)
-    {
-        $this->attributes['slug'] = $value;
     }
 
     protected function casts(): array

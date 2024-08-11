@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Foreign Key to users table
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade'); // Foreign Key to products table
-            $table->string('slug')->unique();
             $table->dateTime('start_booking_date');
             $table->dateTime('end_booking_date');
             $table->unsignedInteger('price_per_hour')->default(0);
@@ -30,7 +29,7 @@ return new class extends Migration
             $table->enum('payment_status', [
                 \App\Models\Transaction::PAYMENT_STATUS_NOT_YET_PAID,
                 \App\Models\Transaction::PAYMENT_STATUS_DP,
-                \App\Models\Transaction::PAYMENT_STATUS_LUNAS
+                \App\Models\Transaction::PAYMENT_STATUS_KEEL
             ])->default(\App\Models\Transaction::PAYMENT_STATUS_NOT_YET_PAID);
             $table->unsignedInteger('payment_total')->default(0);
             $table->timestamps();
